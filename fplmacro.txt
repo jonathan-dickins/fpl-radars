@@ -1,0 +1,68 @@
+'References
+'Microsoft HTML Library
+'Microsoft Internet Controls
+Option Explicit
+
+Sub getPlayers()
+
+    Dim tbl As IHTMLTable
+    Dim ie As InternetExplorer
+    Dim htmlDoc As HTMLDocument
+    Dim tblRow As IHTMLTableRow
+    Dim r As Integer, c As Integer
+    Dim arrPlayers As Variant
+    Dim i As Integer
+    Dim nextRow As Long
+    Dim intLimit As Integer
+    Dim shPlayers As Worksheet
+    
+    Set shPlayers = ThisWorkbook.Sheets("Players")
+    shPlayers.Cells.Clear
+    
+    Set ie = New InternetExplorer
+    ie.Visible = True
+    ie.navigate "https://understat.com/league/EPL/2017"
+
+    Do While ie.readyState <> READYSTATE_COMPLETE
+        DoEvents
+    Loop
+    
+    intLimit = CInt(ie.document.getElementsByClassName("page")(5).innerText) - 1
+     
+    For i = 0 To intLimit
+        Set htmlDoc = ie.document
+        Set tbl = htmlDoc.getElementsByTagName("Table")(1)
+        
+        With tbl
+            ReDim arrPlayers(1 To .Rows.Length - 1, 1 To .Rows(1).Cells.Length)
+            For r = 1 To tbl.Rows.Length - 2
+                For c = 1 To tbl.Rows(r).Cells.Length - 1
+                    arrPlayers(r, c) = tbl.Rows(r).Cells(c).innerText
+                Next
+                
+            Next
+        End With
+        
+        nextRow = shPlayers.Cells(Rows.Count, 1).End(xlUp).Row + 1
+        
+        shPlayers.Cells(nextRow, 1).Resize(UBound(arrPlayers), UBound(arrPlayers, 2)).Value = arrPlayers
+        
+        
+        If i >= intLimit - 2 And i < intLimit Then
+            ie.document.getElementsByClassName("page")(i - 34).Click
+        ElseIf i > 3 Then
+            ie.document.getElementsByClassName("page")(3).Click
+        Else
+            ie.document.getElementsByClassName("page")(i + 1).Click
+        End If
+        
+    Next
+    
+    ie.Quit
+    
+    Set tbl = Nothing
+    Set htmlDoc = Nothing
+    Set ie = Nothing
+    Set shPlayers = Nothing
+
+End Sub
